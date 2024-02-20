@@ -1,6 +1,8 @@
 module ButterHost69/PKr-client
 
-go 1.20
+go 1.22
+
+toolchain go1.22.0
 
 require (
 	github.com/charmbracelet/lipgloss v0.9.1
@@ -10,6 +12,7 @@ require (
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
+	github.com/brianvoe/gofakeit/v7 v7.0.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect

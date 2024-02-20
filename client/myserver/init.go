@@ -20,11 +20,19 @@ var (
 	verficatonOTP int32
 )
 
+func loadPublicKey(path string) error {
+	
+}
+
 func (is *InitServer) VerifyOTP(ctx context.Context, in *pb.OTP) (*pb.OTPResponse, error) {
 	if in.Otp == verficatonOTP {
+		connectionSlug := utils.CreateStub()
 		fmt.Printf("%v is now recognized as a user: %v \n", in.IpAddress, in.Username)
+		fmt.Printf("The Connection Slud is: %s", connectionSlug)
 		return &pb.OTPResponse{
 			IfOtpCorrect: true,
+			ConnectionSlug: connectionSlug,
+			PublicKey: "hello",
 		}, nil
 	}
 
@@ -67,7 +75,7 @@ func (l *Listener) StartGRPCInitConnection() {
 
 }
 
-func sendOTP(ctx context.Context, c pb.InitConnectionClient) bool {
+func sendOTPRequest(ctx context.Context, c pb.InitConnectionClient) bool {
 	var otp int32
 	fmt.Print("Enter OTP: ")
 	fmt.Scan(&otp)
@@ -87,7 +95,12 @@ func sendOTP(ctx context.Context, c pb.InitConnectionClient) bool {
 		return false
 	}
 
-	return response.IfOtpCorrect
+	ifOTPCorrect := response.IfOtpCorrect
+	if ifOTPCorrect {
+		fmt.Printf("Your Connection Slug: %s\n", response.ConnectionSlug)
+		fmt.Printf("Recievers Public Key: %s\n", response.PublicKey)
+	}
+	return ifOTPCorrect
 }
 
 func (s *Sender) closeGRPCInitConnectionSender() {
@@ -113,7 +126,7 @@ func (s *Sender) DialGRPCInitConnection() {
 	defer cancel()
 
 	for {
-		ifnot := sendOTP(ctx, c)
+		ifnot := sendOTPRequest(ctx, c)
 		if ifnot {
 			fmt.Println("Connecting....")
 			break

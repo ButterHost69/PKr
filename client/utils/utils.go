@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	fake "github.com/brianvoe/gofakeit/v7"
 )
 
 func ClearScreen() {
@@ -25,4 +26,8 @@ func CreateOTP(size int) int32 {
 	mask := strings.Repeat("9", size)
 	intmask, _ := strconv.Atoi(mask)
 	return rand.Int31n(int32(intmask))
+}
+
+func CreateStub() string {
+	return fake.Gamertag()
 }
