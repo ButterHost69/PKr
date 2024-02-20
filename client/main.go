@@ -1,66 +1,61 @@
 package main
 
 import (
-	
+	"ButterHost69/PKr-client/myserver"
+	"ButterHost69/PKr-client/utils"
 	"fmt"
-	
+	"sync"
+	// "time"
 )
 
-type UsersConfig struct {
-	User 			string 		`json:"user"`
-	// Permisions		string		`json:"permisions"`
-}
-
 const (
-	ROOT_DIR = "tmp"
-	MY_KEYS_PATH = "tmp/mykeys"
+	INIT_MY_PORT   = ":3000"
+	INIT_MY_DOMAIN = "localhost"
+	INIT_CON_TYPE  = "tcp"
 )
 
 func main() {
+	var wg sync.WaitGroup
+	// var recvPort string
+	utils.ClearScreen()
 	fmt.Println("`` Client Started ``")
 	CreateUserIfNotExists()
-	// if _, err := os.Stat(ROOT_DIR + "/userConfig.js"); os.IsNotExist(err) {
-	// 	fmt.Println("!! 'tmp' No such DIR exists ")
 
-	// 	var username string
-	// 	fmt.Println(" [*] Register [*]")
-	// 	fmt.Print(" > Username: ")
-	// 	fmt.Scanln(&username)
+	for {
+		var opt int
+		menu := Title.Render("~ Select An Option ~\n")
+		menu += "\n"
+		menu += Option.Render("1. Initialize Connection\n2. Manage Connections\n3. GET ALL Files\n4. PUSH Files\n7. Quit\n")
 
-	// 	usconf := UsersConfig{
-	// 		User: username,
-	// 	}
+		fmt.Println(MenuBorder.Render(menu))
+		fmt.Scanln(&opt)
 
-	// 	jsonbytes, err := json.Marshal(usconf)
-	// 	if err != nil {
-	// 		fmt.Println("~ Unable to Parse Username to Json")
-	// 	}
+		switch opt {
+		case 1:
+			utils.ClearScreen()
+			menu := Title.Render("~ Select Initailaization Mode ~\n")
+			menu += "\n"
+			menu += Option.Render("1. Listen\n2. Dial\n")
+			fmt.Println(MenuBorder.Render(menu))
 
-	// 	if err = os.Mkdir(ROOT_DIR, 0766); err != nil {
-	// 		fmt.Println("~ Folder tmp exists")
-	// 	}
-	// 	err = os.WriteFile(ROOT_DIR + "/userConfig.json", jsonbytes, 0766)
-	// 	if err != nil {
-	// 		log.Fatal(err.Error())
-	// 	}
+			fmt.Scanln(&opt)
+			switch opt {
+			case 1:
+				var port string
+				var domain string
+				var conType string
 
-	// 	if err = os.Mkdir(MY_KEYS_PATH, 0766); err != nil {
-	// 		fmt.Println("~ Folder tmp exists")
-	// 	}
-		
-	// 	private_key, public_key := encrypt.GenerateRSAKeys()
-	// 	if private_key == nil && public_key == nil {
-	// 		panic("Could Not Generate Keys")
-	// 	}
-
-	// 	if err = encrypt.StorePrivateKeyInFile(MY_KEYS_PATH + "/privatekey.pem",private_key); err != nil{
-	// 		panic(err.Error())
-	// 	}
-
-	// 	if err = encrypt.StorePublicKeyInFile(MY_KEYS_PATH + "/publickey.pem",public_key); err != nil{
-	// 		panic(err.Error())
-	// 	}
-
-	// 	fmt.Printf(" ~ Created User : %s\n", username)
-	// }
+				fmt.Print(InputFieldLabels.Render(" Enter Domain [eg: 'localhost']: "))
+				fmt.Scanln(&domain)
+				fmt.Print(InputFieldLabels.Render(" Enter Port [eg: '3000']: "))
+				fmt.Scanln(&port)
+				fmt.Print(InputFieldLabels.Render(" Enter Connection Type [eg: 'tcp']: "))
+				fmt.Scanln(&conType)
+				wg.Add(1)
+				server := myserver.InitListener(":"+port, domain, conType, &wg)
+				fmt.Print("\n")
+				server.StartInitListener()
+			}
+		}
+	}
 }

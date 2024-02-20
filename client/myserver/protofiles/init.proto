@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "ButterHost69/PKr-client/myserver/protofiles/";
+
+message OTP {
+    int32 OTP = 1;
+}
+
+message OTPRequest { 
+    bool ifReq = 1;
+}
+
+service InitConnection{
+    rpc SendOTP(OTP) returns (OTP){}
+}

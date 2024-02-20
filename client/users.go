@@ -8,6 +8,17 @@ import (
 	"os"
 )
 
+
+type UsersConfig struct {
+	User 			string 		`json:"user"`
+	// Permisions		string		`json:"permisions"`
+}
+
+const (
+	ROOT_DIR = "tmp"
+	MY_KEYS_PATH = "tmp/mykeys"
+)
+
 func CreateUserIfNotExists() {
 	if _, err := os.Stat(ROOT_DIR + "/userConfig.json"); os.IsNotExist(err) {
 		fmt.Println("!! 'tmp' No such DIR exists ")
