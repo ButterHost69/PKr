@@ -41,6 +41,9 @@ func main() {
 			fmt.Scanln(&opt)
 			switch opt {
 			case 1:
+				fmt.Print(InputFieldLabels.Render(" Listening Connection..."))
+				fmt.Println("\n")
+
 				var port string
 				var domain string
 				var conType string
@@ -55,9 +58,27 @@ func main() {
 				server := myserver.InitListener(domain, ":"+port, conType, &wg)
 				fmt.Print("\n")
 				server.StartGRPCInitConnection()
+
+			case 2:
+				fmt.Print(InputFieldLabels.Render(" Dialing Connection..."))
+				fmt.Println("\n")
+
+				var port string
+				var domain string
+				var conType string
+	
+				fmt.Print(InputFieldLabels.Render(" Enter Domain [eg: 'localhost']: "))
+				fmt.Scanln(&domain)
+				fmt.Print(InputFieldLabels.Render(" Enter Port [eg: '3000']: "))
+				fmt.Scanln(&port)
+				fmt.Print(InputFieldLabels.Render(" Enter Connection Type [eg: 'tcp']: "))
+				fmt.Scanln(&conType)
+				
+				wg.Add(1)
+				server := myserver.InitSender(domain, ":"+port, conType, &wg)
+				fmt.Print("\n")
+				server.DialGRPCInitConnection()
 			}
-		case 2:
-			
 		}
 	}
 }
