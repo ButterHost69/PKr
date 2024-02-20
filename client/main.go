@@ -52,10 +52,12 @@ func main() {
 				fmt.Print(InputFieldLabels.Render(" Enter Connection Type [eg: 'tcp']: "))
 				fmt.Scanln(&conType)
 				wg.Add(1)
-				server := myserver.InitListener(":"+port, domain, conType, &wg)
+				server := myserver.InitListener(domain, ":"+port, conType, &wg)
 				fmt.Print("\n")
-				server.StartInitListener()
+				server.StartGRPCInitConnection()
 			}
+		case 2:
+			
 		}
 	}
 }

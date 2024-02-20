@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package init_connection;
+option go_package = "./myserver/pb";
+
+service InitConnection {
+  rpc VerifyOTP (OTP) returns (OTPResponse);
+}
+
+message OTP {
+  string username = 1;
+  string ip_address = 2;
+  int32 otp = 3;
+}
+
+message OTPResponse {
+  bool if_otp_correct = 1;
+}

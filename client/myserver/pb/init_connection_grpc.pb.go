@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v4.25.3
-// source: myserver/protofiles/init.proto
+// source: init_connection.proto
 
-package protofiles
+package pb
 
 import (
 	context "context"
@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type InitConnectionClient interface {
-	SendOTP(ctx context.Context, in *OTP, opts ...grpc.CallOption) (*OTP, error)
+	VerifyOTP(ctx context.Context, in *OTP, opts ...grpc.CallOption) (*OTPResponse, error)
 }
 
 type initConnectionClient struct {
@@ -33,9 +33,9 @@ func NewInitConnectionClient(cc grpc.ClientConnInterface) InitConnectionClient {
 	return &initConnectionClient{cc}
 }
 
-func (c *initConnectionClient) SendOTP(ctx context.Context, in *OTP, opts ...grpc.CallOption) (*OTP, error) {
-	out := new(OTP)
-	err := c.cc.Invoke(ctx, "/InitConnection/SendOTP", in, out, opts...)
+func (c *initConnectionClient) VerifyOTP(ctx context.Context, in *OTP, opts ...grpc.CallOption) (*OTPResponse, error) {
+	out := new(OTPResponse)
+	err := c.cc.Invoke(ctx, "/init_connection.InitConnection/VerifyOTP", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (c *initConnectionClient) SendOTP(ctx context.Context, in *OTP, opts ...grp
 // All implementations must embed UnimplementedInitConnectionServer
 // for forward compatibility
 type InitConnectionServer interface {
-	SendOTP(context.Context, *OTP) (*OTP, error)
+	VerifyOTP(context.Context, *OTP) (*OTPResponse, error)
 	mustEmbedUnimplementedInitConnectionServer()
 }
 
@@ -54,8 +54,8 @@ type InitConnectionServer interface {
 type UnimplementedInitConnectionServer struct {
 }
 
-func (UnimplementedInitConnectionServer) SendOTP(context.Context, *OTP) (*OTP, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendOTP not implemented")
+func (UnimplementedInitConnectionServer) VerifyOTP(context.Context, *OTP) (*OTPResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerifyOTP not implemented")
 }
 func (UnimplementedInitConnectionServer) mustEmbedUnimplementedInitConnectionServer() {}
 
@@ -70,20 +70,20 @@ func RegisterInitConnectionServer(s grpc.ServiceRegistrar, srv InitConnectionSer
 	s.RegisterService(&InitConnection_ServiceDesc, srv)
 }
 
-func _InitConnection_SendOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _InitConnection_VerifyOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(OTP)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(InitConnectionServer).SendOTP(ctx, in)
+		return srv.(InitConnectionServer).VerifyOTP(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/InitConnection/SendOTP",
+		FullMethod: "/init_connection.InitConnection/VerifyOTP",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InitConnectionServer).SendOTP(ctx, req.(*OTP))
+		return srv.(InitConnectionServer).VerifyOTP(ctx, req.(*OTP))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -92,14 +92,14 @@ func _InitConnection_SendOTP_Handler(srv interface{}, ctx context.Context, dec f
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var InitConnection_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "InitConnection",
+	ServiceName: "init_connection.InitConnection",
 	HandlerType: (*InitConnectionServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SendOTP",
-			Handler:    _InitConnection_SendOTP_Handler,
+			MethodName: "VerifyOTP",
+			Handler:    _InitConnection_VerifyOTP_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "myserver/protofiles/init.proto",
+	Metadata: "init_connection.proto",
 }

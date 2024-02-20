@@ -14,15 +14,15 @@ func ClearScreen() {
 
 	if runtime.GOOS == "windows" {
 		cmd = exec.Command("cmd", "/c", "cls")
-	} else  {
+	} else {
 		cmd = exec.Command("clear")
 	}
 	cmd.Stdout = os.Stdout
 	cmd.Run()
 }
 
-func CreateOTP(size int) int {
+func CreateOTP(size int) int32 {
 	mask := strings.Repeat("9", size)
 	intmask, _ := strconv.Atoi(mask)
-	return rand.Intn(intmask)
+	return rand.Int31n(int32(intmask))
 }
