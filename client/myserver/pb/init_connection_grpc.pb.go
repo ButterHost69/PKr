@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type InitConnectionClient interface {
 	VerifyOTP(ctx context.Context, in *OTP, opts ...grpc.CallOption) (*OTPResponse, error)
+	ExchangeCertificates(ctx context.Context, in *Certificate, opts ...grpc.CallOption) (*CertificateResponse, error)
 }
 
 type initConnectionClient struct {
@@ -42,11 +43,21 @@ func (c *initConnectionClient) VerifyOTP(ctx context.Context, in *OTP, opts ...g
 	return out, nil
 }
 
+func (c *initConnectionClient) ExchangeCertificates(ctx context.Context, in *Certificate, opts ...grpc.CallOption) (*CertificateResponse, error) {
+	out := new(CertificateResponse)
+	err := c.cc.Invoke(ctx, "/init_connection.InitConnection/ExchangeCertificates", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // InitConnectionServer is the server API for InitConnection service.
 // All implementations must embed UnimplementedInitConnectionServer
 // for forward compatibility
 type InitConnectionServer interface {
 	VerifyOTP(context.Context, *OTP) (*OTPResponse, error)
+	ExchangeCertificates(context.Context, *Certificate) (*CertificateResponse, error)
 	mustEmbedUnimplementedInitConnectionServer()
 }
 
@@ -56,6 +67,9 @@ type UnimplementedInitConnectionServer struct {
 
 func (UnimplementedInitConnectionServer) VerifyOTP(context.Context, *OTP) (*OTPResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyOTP not implemented")
+}
+func (UnimplementedInitConnectionServer) ExchangeCertificates(context.Context, *Certificate) (*CertificateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExchangeCertificates not implemented")
 }
 func (UnimplementedInitConnectionServer) mustEmbedUnimplementedInitConnectionServer() {}
 
@@ -88,6 +102,24 @@ func _InitConnection_VerifyOTP_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _InitConnection_ExchangeCertificates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Certificate)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InitConnectionServer).ExchangeCertificates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/init_connection.InitConnection/ExchangeCertificates",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InitConnectionServer).ExchangeCertificates(ctx, req.(*Certificate))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // InitConnection_ServiceDesc is the grpc.ServiceDesc for InitConnection service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -98,6 +130,10 @@ var InitConnection_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "VerifyOTP",
 			Handler:    _InitConnection_VerifyOTP_Handler,
+		},
+		{
+			MethodName: "ExchangeCertificates",
+			Handler:    _InitConnection_ExchangeCertificates_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

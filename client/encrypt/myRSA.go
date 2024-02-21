@@ -3,6 +3,7 @@ package encrypt
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
@@ -56,7 +57,7 @@ func StorePrivateKeyInFile(filepath string, pkey *rsa.PrivateKey) error {
 		return errors.New("~ Private Key Could Not Be Converted To []Byte")
 	}
 
-	return os.WriteFile(filepath, private_pem_key,0666)
+	return os.WriteFile(filepath, private_pem_key, 0666)
 }
 
 func StorePublicKeyInFile(filepath string, pbkey *rsa.PublicKey) error {
@@ -67,4 +68,30 @@ func StorePublicKeyInFile(filepath string, pbkey *rsa.PublicKey) error {
 	}
 
 	return os.WriteFile(filepath, public_pem_key, 0666)
+}
+
+func DecryptData(privateKeyPemBlock string, cipherText string) (string, error) {
+	block, _ := pem.Decode([]byte(privateKeyPemBlock))
+	if block == nil {
+		fmt.Println("error in parsing the pem Block...")
+		fmt.Println("Pls check if the provided Public Key is correct")
+		return "", errors.New("error in retrieving the Pem Block")
+	}
+
+	privKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		fmt.Println("error in parsing the private key...")
+		return "", err
+	}
+
+	hash := sha256.New()
+
+	label := []byte("")
+	plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, privKey, []byte(cipherText), label)
+	if err != nil {
+		fmt.Println("error in decrypting cipher text...")
+		return "", err
+	}
+
+	return string(plaintext), err
 }

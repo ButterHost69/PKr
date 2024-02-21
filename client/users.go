@@ -19,6 +19,10 @@ const (
 	MY_KEYS_PATH = "tmp/mykeys"
 )
 
+var (
+	MY_USERNAME	string
+)
+
 func CreateUserIfNotExists() {
 	if _, err := os.Stat(ROOT_DIR + "/userConfig.json"); os.IsNotExist(err) {
 		fmt.Println("!! 'tmp' No such DIR exists ")
@@ -27,6 +31,7 @@ func CreateUserIfNotExists() {
 		fmt.Println(" [*] Register [*]")
 		fmt.Print(" > Username: ")
 		fmt.Scanln(&username)
+		MY_USERNAME = username
 
 		usconf := UsersConfig{
 			User: username,

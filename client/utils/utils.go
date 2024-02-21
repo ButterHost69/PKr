@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+
 	fake "github.com/brianvoe/gofakeit/v7"
 )
 
@@ -28,6 +29,6 @@ func CreateOTP(size int) int32 {
 	return rand.Int31n(int32(intmask))
 }
 
-func CreateStub() string {
+func CreateSlug() string {
 	return fake.Gamertag()
 }

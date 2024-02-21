@@ -1,14 +1,18 @@
 package myserver
 
 import (
+	"ButterHost69/PKr-client/encrypt"
 	pb "ButterHost69/PKr-client/myserver/pb"
 	"ButterHost69/PKr-client/utils"
 	"context"
+	"errors"
 	"fmt"
 	"net"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/peer"
 )
 
 type InitServer struct {
@@ -18,21 +22,95 @@ type InitServer struct {
 
 var (
 	verficatonOTP int32
+	My_Username   string
+
+	VERIFY_IP string
 )
 
-func loadPublicKey(path string) error {
-	
+const (
+	COMMAND_CONNECTION_PORT = 8069
+	PUBLIC_KEYS_PATH	= "tmp/mykeys/publickey.pem"
+	PRIVATE_KEYS_PATH	= "tmp/mykeys/privatekey.pem"
+)
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+// gRPC ~ Exchnage Certificate Implementation
+
+func (is *InitServer) ExchangeCertificates(ctx context.Context, in *pb.Certificate) (*pb.CertificateResponse, error) {
+	p, _ := peer.FromContext(ctx)
+	incommingIP := p.Addr.String()
+	if incommingIP != VERIFY_IP {
+		fmt.Println(" Init Ip and Incomming IPs Do not match...")
+		return nil, errors.New("init ip and incomming ip's do not match")
+	}
+
+	// Decrypt The Message
+	myPrivateKey := loadPrivateKey()
+	password, err := encrypt.DecryptData(myPrivateKey, in.ConnectionPassword)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, nil
+	}
+
+	fmt.Printf	("Your Connection password: %s\n", password)
+
+	return &pb.CertificateResponse{
+		CommandConnectionPort: 8069,
+	}, nil
+}
+
+func loadPrivateKey() string {
+	// file, err := os.OpenFile(KEYS_PATH, os.O_RDONLY, 0444)
+	// if err != nil {
+	// 	fmt.Println("error in loading public key")
+	// 	fmt.Println(err.Error())
+
+	// 	return ""
+	// }
+	key, err := os.ReadFile(PRIVATE_KEYS_PATH)
+	if err != nil {
+		fmt.Println("error in reading public key")
+		fmt.Println(err.Error())
+
+		return ""
+	}
+	return string(key)
+}
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+func loadPublicKey() string {
+	// file, err := os.OpenFile(KEYS_PATH, os.O_RDONLY, 0444)
+	// if err != nil {
+	// 	fmt.Println("error in loading public key")
+	// 	fmt.Println(err.Error())
+
+	// 	return ""
+	// }
+	key, err := os.ReadFile(PUBLIC_KEYS_PATH)
+	if err != nil {
+		fmt.Println("error in reading public key")
+		fmt.Println(err.Error())
+
+		return ""
+	}
+	return string(key)
 }
 
 func (is *InitServer) VerifyOTP(ctx context.Context, in *pb.OTP) (*pb.OTPResponse, error) {
 	if in.Otp == verficatonOTP {
-		connectionSlug := utils.CreateStub()
-		fmt.Printf("%v is now recognized as a user: %v \n", in.IpAddress, in.Username)
-		fmt.Printf("The Connection Slud is: %s", connectionSlug)
+		connectionSlug := utils.CreateSlug()
+		fmt.Printf("%v is now recognized as user: %v \n", in.IpAddress, in.Username)
+		fmt.Printf("The Connection Slug is: %s", connectionSlug)
+		VERIFY_IP = in.IpAddress
+
 		return &pb.OTPResponse{
-			IfOtpCorrect: true,
+			IfOtpCorrect:   true,
 			ConnectionSlug: connectionSlug,
-			PublicKey: "hello",
+			PublicKey:      loadPublicKey(),
 		}, nil
 	}
 
@@ -66,7 +144,6 @@ func (l *Listener) StartGRPCInitConnection() {
 
 	g := grpc.NewServer()
 	pb.RegisterInitConnectionServer(g, &InitServer{})
-	
 
 	if err := g.Serve(l.listn); err != nil {
 		fmt.Println("error could not start grpc Sever")
@@ -80,11 +157,13 @@ func sendOTPRequest(ctx context.Context, c pb.InitConnectionClient) bool {
 	fmt.Print("Enter OTP: ")
 	fmt.Scan(&otp)
 
+	p, _ := peer.FromContext(ctx)
+
 	response, err := c.VerifyOTP(
 		ctx,
 		&pb.OTP{
 			Username:  "Testing",
-			IpAddress: "temp",
+			IpAddress: p.LocalAddr.String(),
 			Otp:       otp,
 		},
 	)
@@ -96,10 +175,21 @@ func sendOTPRequest(ctx context.Context, c pb.InitConnectionClient) bool {
 	}
 
 	ifOTPCorrect := response.IfOtpCorrect
+	slug := response.ConnectionSlug
+	key := response.PublicKey
+
 	if ifOTPCorrect {
-		fmt.Printf("Your Connection Slug: %s\n", response.ConnectionSlug)
-		fmt.Printf("Recievers Public Key: %s\n", response.PublicKey)
+		fmt.Printf("Your Connection Slug: %s\n", slug)
+		// fmt.Printf("Recievers Public Key: %s\n", key)
 	}
+
+	// If err Than Return Back to the parent function
+	if err := utils.StoreInitPublicKeys(slug, key); err != nil {
+		fmt.Println("Error Occured In Storing Connection's Key")
+		return ifOTPCorrect
+	}
+
+	fmt.Println("Keys Have Been Stored ...")
 	return ifOTPCorrect
 }
 
@@ -111,7 +201,7 @@ func (s *Sender) closeGRPCInitConnectionSender() {
 
 func (s *Sender) DialGRPCInitConnection() {
 	var err error
-	
+
 	s.GRPCConnection, err = grpc.Dial(s.TARGET_DOMAIN+s.TARGET_PORT, grpc.WithInsecure())
 	if err != nil {
 		fmt.Printf("error in Dialing Connection to: %s:%s\nPlease Check IF The IP and PORT is Entered Correctly or not...\n", s.TARGET_DOMAIN, s.TARGET_PORT)

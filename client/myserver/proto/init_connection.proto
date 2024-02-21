@@ -5,6 +5,7 @@ option go_package = "./myserver/pb";
 
 service InitConnection {
   rpc VerifyOTP (OTP) returns (OTPResponse);
+  rpc ExchangeCertificates (Certificate) returns (CertificateResponse);
 }
 
 message OTP {
@@ -17,4 +18,13 @@ message OTPResponse {
   bool if_otp_correct = 1;
   string connection_slug = 2;
   string public_key = 3;
+}
+
+message Certificate {
+  string connection_password = 1;
+  string public_key = 2;
+}
+
+message CertificateResponse{
+  int32 command_connection_port = 1;
 }
