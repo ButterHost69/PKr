@@ -75,7 +75,7 @@ func sendCertificateRequest(ctx context.Context, c pb.InitConnectionClient) stri
 	fmt.Scan(&password)
 
 
-	encypPass, _ := encrypt.EncryptData(password, loadPublicKey())
+	encypPass, _ := encrypt.EncryptData(password, loadPublicOthersKey("tmp/connections/"+CONNECTION_SLUG+"/publickey.pem"))
 	response, err := c.ExchangeCertificates(
 		ctx,
 		&pb.Certificate{
@@ -104,6 +104,25 @@ func loadPrivateKey() string {
 	// 	return ""
 	// }
 	key, err := os.ReadFile(PRIVATE_KEYS_PATH)
+	if err != nil {
+		fmt.Println("error in reading public key")
+		fmt.Println(err.Error())
+
+		return ""
+	}
+	return string(key)
+}
+
+
+func loadPublicOthersKey(fp string) string {
+	// file, err := os.OpenFile(KEYS_PATH, os.O_RDONLY, 0444)
+	// if err != nil {
+	// 	fmt.Println("error in loading public key")
+	// 	fmt.Println(err.Error())
+
+	// 	return ""
+	// }
+	key, err := os.ReadFile(fp)
 	if err != nil {
 		fmt.Println("error in reading public key")
 		fmt.Println(err.Error())
