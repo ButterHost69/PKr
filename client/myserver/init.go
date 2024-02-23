@@ -21,8 +21,9 @@ type InitServer struct {
 }
 
 var (
-	verficatonOTP int32
-	My_Username   string
+	verficatonOTP 	int32
+	My_Username   	string
+	CONNECTION_SLUG	string
 
 	VERIFY_IP string
 )
@@ -56,7 +57,13 @@ func (is *InitServer) ExchangeCertificates(ctx context.Context, in *pb.Certifica
 
 	fmt.Printf("Your Connection password: %s\n", password)
 
-	
+	if err := utils.StoreInitPublicKeys(CONNECTION_SLUG, in.PublicKey); err != nil {
+		fmt.Println("Error Occured In Storing Connection's Key")
+		return nil,nil
+	}
+
+	fmt.Println("Keys Have Been Stored ...")
+
 	return &pb.CertificateResponse{
 		CommandConnectionPort: 8069,
 	}, nil
@@ -134,6 +141,7 @@ func (is *InitServer) VerifyOTP(ctx context.Context, in *pb.OTP) (*pb.OTPRespons
 
 		fmt.Println("IP : ", ip)
 		connectionSlug := utils.CreateSlug()
+		CONNECTION_SLUG = connectionSlug
 		fmt.Printf("%v is now recognized as user: %v \n", ip, in.Username)
 		fmt.Printf("The Connection Slug is: %s\n", connectionSlug)
 		VERIFY_IP = ip
@@ -216,6 +224,7 @@ func sendOTPRequest(ctx context.Context, c pb.InitConnectionClient) bool {
 	}
 
 	// If err Than Return Back to the parent function
+	CONNECTION_SLUG = slug
 	if err := utils.StoreInitPublicKeys(slug, key); err != nil {
 		fmt.Println("Error Occured In Storing Connection's Key")
 		return ifOTPCorrect
