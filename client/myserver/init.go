@@ -29,8 +29,8 @@ var (
 
 const (
 	COMMAND_CONNECTION_PORT = 8069
-	PUBLIC_KEYS_PATH	= "tmp/mykeys/publickey.pem"
-	PRIVATE_KEYS_PATH	= "tmp/mykeys/privatekey.pem"
+	PUBLIC_KEYS_PATH        = "tmp/mykeys/publickey.pem"
+	PRIVATE_KEYS_PATH       = "tmp/mykeys/privatekey.pem"
 )
 
 /////////////////////////////////////////////////////////////////
@@ -41,12 +41,12 @@ const (
 func (is *InitServer) ExchangeCertificates(ctx context.Context, in *pb.Certificate) (*pb.CertificateResponse, error) {
 	p, _ := peer.FromContext(ctx)
 	incommingIP := p.Addr.String()
+	fmt.Printf("Esatablishing Connection...\n")
 	if incommingIP != VERIFY_IP {
 		fmt.Println(" Init Ip and Incomming IPs Do not match...")
 		return nil, errors.New("init ip and incomming ip's do not match")
 	}
 
-	// Decrypt The Message
 	myPrivateKey := loadPrivateKey()
 	password, err := encrypt.DecryptData(myPrivateKey, in.ConnectionPassword)
 	if err != nil {
@@ -54,11 +54,38 @@ func (is *InitServer) ExchangeCertificates(ctx context.Context, in *pb.Certifica
 		return nil, nil
 	}
 
-	fmt.Printf	("Your Connection password: %s\n", password)
+	fmt.Printf("Your Connection password: %s\n", password)
 
+	
 	return &pb.CertificateResponse{
 		CommandConnectionPort: 8069,
 	}, nil
+}
+
+func sendCertificateRequest(ctx context.Context, c pb.InitConnectionClient) string {
+	var password string
+	fmt.Print("Enter Password: ")
+	fmt.Scan(&password)
+
+
+	encypPass, _ := encrypt.EncryptData(password, loadPublicKey())
+	response, err := c.ExchangeCertificates(
+		ctx,
+		&pb.Certificate{
+			ConnectionPassword: encypPass,
+			PublicKey:          loadPublicKey(),
+		},
+	)
+	if err != nil {
+		fmt.Println("error in recieving Command Connection Port Number")
+		fmt.Println(err.Error())
+
+		return ""
+	}
+
+	cmdConnectionPort := response.CommandConnectionPort
+	fmt.Printf("Command Connection Port: %d\n", cmdConnectionPort)
+	return string(cmdConnectionPort)
 }
 
 func loadPrivateKey() string {
@@ -102,10 +129,15 @@ func loadPublicKey() string {
 
 func (is *InitServer) VerifyOTP(ctx context.Context, in *pb.OTP) (*pb.OTPResponse, error) {
 	if in.Otp == verficatonOTP {
+		p, _ := peer.FromContext(ctx)
+		ip := p.Addr.String()
+
+		fmt.Println("IP : ", ip)
 		connectionSlug := utils.CreateSlug()
-		fmt.Printf("%v is now recognized as user: %v \n", in.IpAddress, in.Username)
-		fmt.Printf("The Connection Slug is: %s", connectionSlug)
-		VERIFY_IP = in.IpAddress
+		fmt.Printf("%v is now recognized as user: %v \n", ip, in.Username)
+		fmt.Printf("The Connection Slug is: %s\n", connectionSlug)
+		VERIFY_IP = ip
+		fmt.Printf("Establishing Connection...\n")
 
 		return &pb.OTPResponse{
 			IfOtpCorrect:   true,
@@ -157,13 +189,13 @@ func sendOTPRequest(ctx context.Context, c pb.InitConnectionClient) bool {
 	fmt.Print("Enter OTP: ")
 	fmt.Scan(&otp)
 
-	p, _ := peer.FromContext(ctx)
-
 	response, err := c.VerifyOTP(
 		ctx,
 		&pb.OTP{
-			Username:  "Testing",
-			IpAddress: p.LocalAddr.String(),
+			Username: "Testing",
+			// TODO : REMOVE THE IP ADDRESS AS IP CAN BE
+			//GET FROM CTX ON THE RECIEVER END
+			IpAddress: "Hello", // p.LocalAddr.String()
 			Otp:       otp,
 		},
 	)
@@ -222,4 +254,6 @@ func (s *Sender) DialGRPCInitConnection() {
 			break
 		}
 	}
+
+	sendCertificateRequest(ctx, c)
 }

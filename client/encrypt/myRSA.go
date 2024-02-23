@@ -5,9 +5,12 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"errors"
 	"fmt"
+
+	// "hash"
 	"os"
 )
 
@@ -74,7 +77,7 @@ func DecryptData(privateKeyPemBlock string, cipherText string) (string, error) {
 	block, _ := pem.Decode([]byte(privateKeyPemBlock))
 	if block == nil {
 		fmt.Println("error in parsing the pem Block...")
-		fmt.Println("Pls check if the provided Public Key is correct")
+		fmt.Println("Pls check if the provided Private Key is correct")
 		return "", errors.New("error in retrieving the Pem Block")
 	}
 
@@ -86,12 +89,45 @@ func DecryptData(privateKeyPemBlock string, cipherText string) (string, error) {
 
 	hash := sha256.New()
 
+	baseDecoded, _ := base64.StdEncoding.DecodeString(cipherText)
 	label := []byte("")
-	plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, privKey, []byte(cipherText), label)
+	plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, privKey, []byte(baseDecoded), label)
 	if err != nil {
 		fmt.Println("error in decrypting cipher text...")
 		return "", err
 	}
 
 	return string(plaintext), err
+}
+
+func EncryptData(data string, publicPemBock string) (string, error) {
+
+	block, _ := pem.Decode([]byte(publicPemBock))
+	if block == nil {
+		fmt.Println("error in parsing the pem Block...")
+		fmt.Println("Pls check if the provided Public Key is correct")
+		return "", errors.New("error in retrieving the Pem Block")
+	}
+
+	publicKey, err := x509.ParsePKCS1PublicKey(block.Bytes)
+	if err != nil {
+		fmt.Println("error in parsing the Public key...")
+		return "", err
+	}
+
+	label := []byte("")
+	hash := sha256.New()
+
+	result, err := rsa.EncryptOAEP(hash, rand.Reader, publicKey, []byte(data), label)
+	if err != nil {
+		fmt.Println("error in encypting the messgae...")
+		fmt.Println(err.Error())
+		return "",err
+	}
+
+	// fmt.Printf("[Log] : Encryped Message: %s\n", string(result))
+
+	base64Encrypted := base64.StdEncoding.EncodeToString(result)
+    return base64Encrypted, nil
+	// return string(result), nil
 }
