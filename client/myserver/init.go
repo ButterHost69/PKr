@@ -2,6 +2,7 @@ package myserver
 
 import (
 	"ButterHost69/PKr-client/encrypt"
+	"ButterHost69/PKr-client/models"
 	pb "ButterHost69/PKr-client/myserver/pb"
 	"ButterHost69/PKr-client/utils"
 	"context"
@@ -21,11 +22,12 @@ type InitServer struct {
 }
 
 var (
-	verficatonOTP 	int32
-	My_Username   	string
-	CONNECTION_SLUG	string
+	verficatonOTP   	int32
+	My_Username     	string
+	CONNECTION_SLUG 	string
 
-	VERIFY_IP string
+	VERIFY_IP 			string
+	DIAL_CONNECTION_IP	string
 )
 
 const (
@@ -59,11 +61,12 @@ func (is *InitServer) ExchangeCertificates(ctx context.Context, in *pb.Certifica
 
 	if err := utils.StoreInitPublicKeys(CONNECTION_SLUG, in.PublicKey); err != nil {
 		fmt.Println("Error Occured In Storing Connection's Key")
-		return nil,nil
+		return nil, nil
 	}
 
 	fmt.Println("Keys Have Been Stored ...")
 
+	models.AddConnectionInUserConfig(CONNECTION_SLUG, password, incommingIP)
 	return &pb.CertificateResponse{
 		CommandConnectionPort: 8069,
 	}, nil
@@ -73,7 +76,6 @@ func sendCertificateRequest(ctx context.Context, c pb.InitConnectionClient) stri
 	var password string
 	fmt.Print("Enter Password: ")
 	fmt.Scan(&password)
-
 
 	encypPass, _ := encrypt.EncryptData(password, loadPublicOthersKey("tmp/connections/"+CONNECTION_SLUG+"/publickey.pem"))
 	response, err := c.ExchangeCertificates(
@@ -92,6 +94,8 @@ func sendCertificateRequest(ctx context.Context, c pb.InitConnectionClient) stri
 
 	cmdConnectionPort := response.CommandConnectionPort
 	fmt.Printf("Command Connection Port: %d\n", cmdConnectionPort)
+
+	models.AddConnectionInUserConfig(CONNECTION_SLUG, password, DIAL_CONNECTION_IP)
 	return string(cmdConnectionPort)
 }
 
@@ -112,7 +116,6 @@ func loadPrivateKey() string {
 	}
 	return string(key)
 }
-
 
 func loadPublicOthersKey(fp string) string {
 	// file, err := os.OpenFile(KEYS_PATH, os.O_RDONLY, 0444)
@@ -262,6 +265,7 @@ func (s *Sender) closeGRPCInitConnectionSender() {
 func (s *Sender) DialGRPCInitConnection() {
 	var err error
 
+	DIAL_CONNECTION_IP = s.TARGET_DOMAIN+s.TARGET_PORT
 	s.GRPCConnection, err = grpc.Dial(s.TARGET_DOMAIN+s.TARGET_PORT, grpc.WithInsecure())
 	if err != nil {
 		fmt.Printf("error in Dialing Connection to: %s:%s\nPlease Check IF The IP and PORT is Entered Correctly or not...\n", s.TARGET_DOMAIN, s.TARGET_PORT)

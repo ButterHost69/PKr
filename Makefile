@@ -1,4 +1,4 @@
-ClientMainFiles = client/main.go client/users.go client/styles.go
+ClientMainFiles = client/main.go client/styles.go
 
 run-client : $(ClientMainFiles)
 			@go run $(ClientMainFiles)

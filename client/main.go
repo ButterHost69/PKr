@@ -3,6 +3,7 @@ package main
 import (
 	"ButterHost69/PKr-client/myserver"
 	"ButterHost69/PKr-client/utils"
+	"ButterHost69/PKr-client/models"
 	"fmt"
 	"sync"
 	// "time"
@@ -19,7 +20,7 @@ func main() {
 	// var recvPort string
 	utils.ClearScreen()
 	fmt.Println("`` Client Started ``")
-	CreateUserIfNotExists()
+	models.CreateUserIfNotExists()
 
 	for {
 		var opt int
