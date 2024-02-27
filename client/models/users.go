@@ -9,18 +9,29 @@ import (
 )
 
 type Connections struct {
-	ConnectionSlug 	string 	`json:"connection_slug"`
-	Password       	string 	`json:"password"`
-	CurrentIP		string	`json:"current_ip"`
-
-	SendFiles		
+	ConnectionSlug string `json:"connection_slug"`
+	Password       string `json:"password"`
+	CurrentIP      string `json:"current_ip"`
 }
 
-type Files struct 
+type WorkspaceFolder struct {
+	WorkspaceName   string   `json:"workspace_name"`
+	WorkspaceLoc    string   `json:"workspace_loc"`
+	ConnectionSlugs []string `json:"connection_slug"`
+}
+
+type Files struct {
+	FileName string `json:"file_name"`
+	FileLoc  string `json:"file_loc"`
+	FileSize string `json:"file_size"`
+}
 
 type UsersConfig struct {
 	User           string        `json:"user"`
 	AllConnections []Connections `json:"all_connections"`
+
+	Sendworkspaces []WorkspaceFolder `json:"send_workspace"`
+	GetWorkspaces  []WorkspaceFolder `json:"get_workspace"`
 }
 
 const (
@@ -85,11 +96,11 @@ func AddConnection(connection_slug string, password string) {
 
 }
 
-func AddConnectionInUserConfig(connection_slug string, password string, connectionIP string) error {
+func readFromUserConfigFile() (UsersConfig, error) {
 	file, err := os.Open(CONFIG_FILE)
 	if err != nil {
 		fmt.Println("error in opening config file.... pls check if tmp/userConfig.json available ")
-		return err
+		return UsersConfig{}, err
 	}
 	defer file.Close()
 
@@ -98,32 +109,116 @@ func AddConnectionInUserConfig(connection_slug string, password string, connecti
 	err = decoder.Decode(&userConfig)
 	if err != nil {
 		fmt.Println("error in decoding json data")
-		return err
+		return UsersConfig{}, err
 	}
 
-	connection := Connections{
-		ConnectionSlug: connection_slug,
-		Password:       password,
-		CurrentIP: connectionIP,
-	}
+	return userConfig, nil
+}
 
-	userConfig.AllConnections = append(userConfig.AllConnections, connection)
-	newUserConfig := UsersConfig{
-		User:           userConfig.User,
-		AllConnections: userConfig.AllConnections,
-	}	
+func writeToUserConfigFile(newUserConfig UsersConfig) error {
 	jsonData, err := json.MarshalIndent(newUserConfig, "", "	")
+	// fmt.Println(jsonData)
 	if err != nil {
 		fmt.Println("error occured in Marshalling the data to JSON")
 		fmt.Println(err)
 		return err
 	}
 
-	// fmt.Println(string(jsonData))
+	fmt.Println(string(jsonData))
 	err = os.WriteFile(CONFIG_FILE, jsonData, 0777)
 	if err != nil {
 		fmt.Println("error occured in storing data in userconfig file")
 		fmt.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+func AddConnectionInUserConfig(connection_slug string, password string, connectionIP string) error {
+	userConfig, err := readFromUserConfigFile()
+	if err != nil {
+		return err
+	}
+
+	connection := Connections{
+		ConnectionSlug: connection_slug,
+		Password:       password,
+		CurrentIP:      connectionIP,
+	}
+
+	userConfig.AllConnections = append(userConfig.AllConnections, connection)
+	newUserConfig := UsersConfig{
+		User:           userConfig.User,
+		AllConnections: userConfig.AllConnections,
+	}
+
+	if err := writeToUserConfigFile(newUserConfig); err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateWorkSpaceFolders() {
+
+}
+
+// func SetWorkSpaceFolders () error {
+
+// }
+
+func AddNewConnectionToTheWorkspace(wName string, connectionSlug string) error {
+	userConfig, err := readFromUserConfigFile()
+	if err != nil {
+		return err
+	}
+
+	wFound := false
+	for _, newSWork := range userConfig.Sendworkspaces {
+		if wName == newSWork.WorkspaceName {
+			wFound = true
+			newSWork.ConnectionSlugs = append(newSWork.ConnectionSlugs, connectionSlug)
+			break
+		}
+	}
+
+	if !wFound {
+		fmt.Println(" No Such Workspace Exists !!")
+		return nil
+	}
+
+	if err := writeToUserConfigFile(userConfig); err != nil {
+		fmt.Println("error in writting to the user config file ...")
+		return err
+	}
+
+	fmt.Printf(" New Connection Added To %s Workspace \n", wName)
+	return nil
+}
+
+func CreateNewWorkspace(wName string, wPath string, connectionSlug string) error {
+	//connectionSlugs := make([]string, 1)
+	var connectionSlugs []string
+	connectionSlugs = append(connectionSlugs, connectionSlug)
+	fmt.Println(connectionSlugs)
+	wfolder := WorkspaceFolder{
+		WorkspaceName:   wName,
+		WorkspaceLoc:    wPath,
+		ConnectionSlugs: connectionSlugs,
+	}
+
+	userConfig, err := readFromUserConfigFile()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(userConfig)
+	userConfig.Sendworkspaces = append(userConfig.Sendworkspaces, wfolder)
+
+	fmt.Println(userConfig)
+
+	if err := writeToUserConfigFile(userConfig); err != nil {
+		fmt.Println("error: could not write to userconfig file")
 		return err
 	}
 

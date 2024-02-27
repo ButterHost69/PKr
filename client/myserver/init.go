@@ -22,12 +22,12 @@ type InitServer struct {
 }
 
 var (
-	verficatonOTP   	int32
-	My_Username     	string
-	CONNECTION_SLUG 	string
+	verficatonOTP   int32
+	My_Username     string
+	CONNECTION_SLUG string
 
-	VERIFY_IP 			string
-	DIAL_CONNECTION_IP	string
+	VERIFY_IP          string
+	DIAL_CONNECTION_IP string
 )
 
 const (
@@ -35,6 +35,70 @@ const (
 	PUBLIC_KEYS_PATH        = "tmp/mykeys/publickey.pem"
 	PRIVATE_KEYS_PATH       = "tmp/mykeys/privatekey.pem"
 )
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+// Set Workspace Folders
+
+func setWorkSpaceFolders() {
+	var opt int
+	fmt.Println("1. Use Existing Workspace")
+	fmt.Println("2. Create New Workspace  ")
+	fmt.Scanln(&opt)
+	fmt.Println("\n")
+
+	switch opt {
+	case 1:
+		var workspaceName string
+		fmt.Println(" Enter Existing Workspace Name: ")
+		fmt.Scanln(&workspaceName)
+
+		models.AddNewConnectionToTheWorkspace(workspaceName, CONNECTION_SLUG)
+	case 2:
+		var workspaceName string
+		var workspacePath string
+
+		fmt.Print(" Enter NEW Workspace Name: ")
+		fmt.Scanln(&workspaceName)
+
+		fmt.Print(" Enter Workspace Path: ")
+		fmt.Scanln(&workspacePath)
+
+		if err := models.CreateNewWorkspace(workspaceName, workspacePath, CONNECTION_SLUG); err != nil {
+			fmt.Println("error occured in Creating New Workspace")
+			fmt.Println(err)
+			return
+		}
+
+		fmt.Println("NEW Workspace Created Successfully !!")
+
+	}
+}
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+// gRPC ~ GETWorkspaceinfo
+
+// func (is *InitServer) GETWorkspaceinfo(ctx context.Context, in *pb.Workspaces) (*pb.Workspaces, error) {
+// 	p, _ := peer.FromContext(ctx)
+// 	incommingIP := p.Addr.String()
+// 	fmt.Printf("Esatablishing Connection...\n")
+// 	if incommingIP != VERIFY_IP {
+// 		fmt.Println(" Init Ip and Incomming IPs Do not match...")
+// 		return nil, errors.New("init ip and incomming ip's do not match")
+// 	}
+
+// 	for connection
+// }
+
+// func getWorkspaceInfoRequest(ctx context.Context, c pb.InitConnectionClient) string {
+
+// }
 
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
@@ -67,6 +131,7 @@ func (is *InitServer) ExchangeCertificates(ctx context.Context, in *pb.Certifica
 	fmt.Println("Keys Have Been Stored ...")
 
 	models.AddConnectionInUserConfig(CONNECTION_SLUG, password, incommingIP)
+	setWorkSpaceFolders()
 	return &pb.CertificateResponse{
 		CommandConnectionPort: 8069,
 	}, nil
@@ -96,6 +161,7 @@ func sendCertificateRequest(ctx context.Context, c pb.InitConnectionClient) stri
 	fmt.Printf("Command Connection Port: %d\n", cmdConnectionPort)
 
 	models.AddConnectionInUserConfig(CONNECTION_SLUG, password, DIAL_CONNECTION_IP)
+	setWorkSpaceFolders()
 	return string(cmdConnectionPort)
 }
 
@@ -265,7 +331,7 @@ func (s *Sender) closeGRPCInitConnectionSender() {
 func (s *Sender) DialGRPCInitConnection() {
 	var err error
 
-	DIAL_CONNECTION_IP = s.TARGET_DOMAIN+s.TARGET_PORT
+	DIAL_CONNECTION_IP = s.TARGET_DOMAIN + s.TARGET_PORT
 	s.GRPCConnection, err = grpc.Dial(s.TARGET_DOMAIN+s.TARGET_PORT, grpc.WithInsecure())
 	if err != nil {
 		fmt.Printf("error in Dialing Connection to: %s:%s\nPlease Check IF The IP and PORT is Entered Correctly or not...\n", s.TARGET_DOMAIN, s.TARGET_PORT)

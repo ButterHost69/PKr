@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type InitConnectionClient interface {
 	VerifyOTP(ctx context.Context, in *OTP, opts ...grpc.CallOption) (*OTPResponse, error)
 	ExchangeCertificates(ctx context.Context, in *Certificate, opts ...grpc.CallOption) (*CertificateResponse, error)
+	GETWorkspaceinfo(ctx context.Context, in *Workspaces, opts ...grpc.CallOption) (*Workspaces, error)
 }
 
 type initConnectionClient struct {
@@ -52,12 +53,22 @@ func (c *initConnectionClient) ExchangeCertificates(ctx context.Context, in *Cer
 	return out, nil
 }
 
+func (c *initConnectionClient) GETWorkspaceinfo(ctx context.Context, in *Workspaces, opts ...grpc.CallOption) (*Workspaces, error) {
+	out := new(Workspaces)
+	err := c.cc.Invoke(ctx, "/init_connection.InitConnection/GETWorkspaceinfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // InitConnectionServer is the server API for InitConnection service.
 // All implementations must embed UnimplementedInitConnectionServer
 // for forward compatibility
 type InitConnectionServer interface {
 	VerifyOTP(context.Context, *OTP) (*OTPResponse, error)
 	ExchangeCertificates(context.Context, *Certificate) (*CertificateResponse, error)
+	GETWorkspaceinfo(context.Context, *Workspaces) (*Workspaces, error)
 	mustEmbedUnimplementedInitConnectionServer()
 }
 
@@ -70,6 +81,9 @@ func (UnimplementedInitConnectionServer) VerifyOTP(context.Context, *OTP) (*OTPR
 }
 func (UnimplementedInitConnectionServer) ExchangeCertificates(context.Context, *Certificate) (*CertificateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExchangeCertificates not implemented")
+}
+func (UnimplementedInitConnectionServer) GETWorkspaceinfo(context.Context, *Workspaces) (*Workspaces, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GETWorkspaceinfo not implemented")
 }
 func (UnimplementedInitConnectionServer) mustEmbedUnimplementedInitConnectionServer() {}
 
@@ -120,6 +134,24 @@ func _InitConnection_ExchangeCertificates_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _InitConnection_GETWorkspaceinfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Workspaces)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InitConnectionServer).GETWorkspaceinfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/init_connection.InitConnection/GETWorkspaceinfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InitConnectionServer).GETWorkspaceinfo(ctx, req.(*Workspaces))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // InitConnection_ServiceDesc is the grpc.ServiceDesc for InitConnection service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -134,6 +166,10 @@ var InitConnection_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExchangeCertificates",
 			Handler:    _InitConnection_ExchangeCertificates_Handler,
+		},
+		{
+			MethodName: "GETWorkspaceinfo",
+			Handler:    _InitConnection_GETWorkspaceinfo_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
