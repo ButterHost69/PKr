@@ -8,8 +8,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"os"
+	
 	"time"
 
 	"google.golang.org/grpc"
@@ -18,7 +20,8 @@ import (
 
 type InitServer struct {
 	pb.UnimplementedInitConnectionServer
-	OTP pb.OTP
+	OTP                  pb.OTP
+	shutDownListenerchan chan struct{}
 }
 
 var (
@@ -41,7 +44,7 @@ const (
 
 // Set Workspace Folders
 
-func setWorkSpaceFolders() {
+func SetWorkSpaceFolders(connectionSlug string) {
 	var opt int
 	fmt.Println("1. Use Existing Workspace")
 	fmt.Println("2. Create New Workspace  ")
@@ -54,7 +57,7 @@ func setWorkSpaceFolders() {
 		fmt.Println(" Enter Existing Workspace Name: ")
 		fmt.Scanln(&workspaceName)
 
-		models.AddNewConnectionToTheWorkspace(workspaceName, CONNECTION_SLUG)
+		models.AddNewConnectionToTheWorkspace(workspaceName, connectionSlug)
 	case 2:
 		var workspaceName string
 		var workspacePath string
@@ -65,7 +68,7 @@ func setWorkSpaceFolders() {
 		fmt.Print(" Enter Workspace Path: ")
 		fmt.Scanln(&workspacePath)
 
-		if err := models.CreateNewWorkspace(workspaceName, workspacePath, CONNECTION_SLUG); err != nil {
+		if err := models.CreateNewWorkspace(workspaceName, workspacePath, connectionSlug); err != nil {
 			fmt.Println("error occured in Creating New Workspace")
 			fmt.Println(err)
 			return
@@ -130,8 +133,9 @@ func (is *InitServer) ExchangeCertificates(ctx context.Context, in *pb.Certifica
 
 	fmt.Println("Keys Have Been Stored ...")
 
+	is.shutDownListenerchan <- struct{}{}
 	models.AddConnectionInUserConfig(CONNECTION_SLUG, password, incommingIP)
-	setWorkSpaceFolders()
+
 	return &pb.CertificateResponse{
 		CommandConnectionPort: 8069,
 	}, nil
@@ -161,7 +165,7 @@ func sendCertificateRequest(ctx context.Context, c pb.InitConnectionClient) stri
 	fmt.Printf("Command Connection Port: %d\n", cmdConnectionPort)
 
 	models.AddConnectionInUserConfig(CONNECTION_SLUG, password, DIAL_CONNECTION_IP)
-	setWorkSpaceFolders()
+
 	return string(cmdConnectionPort)
 }
 
@@ -255,7 +259,7 @@ func (l *Listener) closeGRPCInitConnectionListener() {
 	l.listn.Close()
 }
 
-func (l *Listener) StartGRPCInitConnection() {
+func (l *Listener) StartGRPCInitConnection() string {
 
 	var err error
 	l.listn, err = net.Listen(l.CONTYPE, l.DOMAIN+l.PORT)
@@ -264,19 +268,37 @@ func (l *Listener) StartGRPCInitConnection() {
 	if err != nil {
 		fmt.Println("error occured at starting listener")
 		fmt.Println(err.Error())
-		return
+		return ""
 	}
 
 	verficatonOTP = utils.CreateOTP(5)
 	fmt.Printf(" Your OTP is: %v\n", verficatonOTP)
 
 	g := grpc.NewServer()
-	pb.RegisterInitConnectionServer(g, &InitServer{})
+	shutDownchan := make(chan struct{})
+	pb.RegisterInitConnectionServer(g, &InitServer{shutDownListenerchan: shutDownchan})
 
-	if err := g.Serve(l.listn); err != nil {
-		fmt.Println("error could not start grpc Sever")
-		return
-	}
+	go func() {
+		if err := g.Serve(l.listn); err != nil {
+			fmt.Println("error could not start grpc Sever")
+			// return "hello"
+		}
+	}()
+	var conslug string
+	// go func() {
+		<-shutDownchan
+		g.GracefulStop()
+		log.Println(" Closing Listener ...")
+		conslug = CONNECTION_SLUG
+		return conslug
+	// }()
+	
+	
+	// c := make(chan os.Signal, 1)
+	// signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	// <-c
+	// g.GracefulStop()
+	// log.Println(" Closing Listener ...")
 
 }
 
@@ -352,6 +374,9 @@ func (s *Sender) DialGRPCInitConnection() {
 			break
 		}
 	}
+	cport := sendCertificateRequest(ctx, c)
+	if cport != "" {
+		SetWorkSpaceFolders(CONNECTION_SLUG)
+	}
 
-	sendCertificateRequest(ctx, c)
 }

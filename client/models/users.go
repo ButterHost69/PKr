@@ -124,7 +124,7 @@ func writeToUserConfigFile(newUserConfig UsersConfig) error {
 		return err
 	}
 
-	fmt.Println(string(jsonData))
+	// fmt.Println(string(jsonData))
 	err = os.WriteFile(CONFIG_FILE, jsonData, 0777)
 	if err != nil {
 		fmt.Println("error occured in storing data in userconfig file")
@@ -215,7 +215,7 @@ func CreateNewWorkspace(wName string, wPath string, connectionSlug string) error
 	fmt.Println(userConfig)
 	userConfig.Sendworkspaces = append(userConfig.Sendworkspaces, wfolder)
 
-	fmt.Println(userConfig)
+	// fmt.Println(userConfig)
 
 	if err := writeToUserConfigFile(userConfig); err != nil {
 		fmt.Println("error: could not write to userconfig file")
@@ -224,3 +224,4 @@ func CreateNewWorkspace(wName string, wPath string, connectionSlug string) error
 
 	return nil
 }
+

@@ -58,7 +58,8 @@ func main() {
 				wg.Add(1)
 				server := myserver.InitListener(domain, ":"+port, conType, &wg)
 				fmt.Print("\n")
-				server.StartGRPCInitConnection()
+				conslug := server.StartGRPCInitConnection()
+				myserver.SetWorkSpaceFolders(conslug)
 
 			case 2:
 				fmt.Print(InputFieldLabels.Render(" Dialing Connection..."))
