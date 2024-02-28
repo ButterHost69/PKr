@@ -12,7 +12,6 @@ import (
 	"net"
 	"os"
 	"strconv"
-
 	"time"
 
 	"google.golang.org/grpc"
@@ -240,6 +239,7 @@ func (is *InitServer) VerifyOTP(ctx context.Context, in *pb.OTP) (*pb.OTPRespons
 
 		fmt.Println("IP : ", ip)
 		connectionSlug := utils.CreateSlug()
+		// fmt.Println(connectionSlug)
 		CONNECTION_SLUG = connectionSlug
 		fmt.Printf("%v is now recognized as user: %v \n", ip, in.Username)
 		fmt.Printf("The Connection Slug is: %s\n", connectionSlug)

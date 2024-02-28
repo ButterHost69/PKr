@@ -30,5 +30,12 @@ func CreateOTP(size int) int32 {
 }
 
 func CreateSlug() string {
-	return fake.Gamertag()
+	var gamerTag []string
+	for i := 0; i < 1024; i++ {
+		gamerTag = append(gamerTag, fake.Gamertag())
+	}
+	// fmt.Println(gamerTag)
+	g := rand.Intn(1024)
+	// fmt.Println(g)
+	return gamerTag[g]
 }
