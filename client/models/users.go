@@ -112,6 +112,7 @@ func readFromUserConfigFile() (UsersConfig, error) {
 		return UsersConfig{}, err
 	}
 
+	fmt.Println(userConfig)
 	return userConfig, nil
 }
 
@@ -151,6 +152,8 @@ func AddConnectionInUserConfig(connection_slug string, password string, connecti
 	newUserConfig := UsersConfig{
 		User:           userConfig.User,
 		AllConnections: userConfig.AllConnections,
+		Sendworkspaces: userConfig.Sendworkspaces,
+		GetWorkspaces: userConfig.GetWorkspaces,
 	}
 
 	if err := writeToUserConfigFile(newUserConfig); err != nil {
@@ -212,10 +215,13 @@ func CreateNewWorkspace(wName string, wPath string, connectionSlug string) error
 		return err
 	}
 
-	fmt.Println(userConfig)
+	fmt.Println(userConfig.Sendworkspaces)
+
 	userConfig.Sendworkspaces = append(userConfig.Sendworkspaces, wfolder)
 
-	// fmt.Println(userConfig)
+	fmt.Println(userConfig.Sendworkspaces)
+	jj, _ := json.MarshalIndent(userConfig, "", "	")
+	fmt.Println(string(jj))
 
 	if err := writeToUserConfigFile(userConfig); err != nil {
 		fmt.Println("error: could not write to userconfig file")
@@ -224,4 +230,3 @@ func CreateNewWorkspace(wName string, wPath string, connectionSlug string) error
 
 	return nil
 }
-

@@ -29,7 +29,7 @@ func main() {
 		menu += Option.Render("1. Initialize Connection\n2. Manage Connections\n3. GET ALL Files\n4. PUSH Files\n7. Quit\n")
 
 		fmt.Println(MenuBorder.Render(menu))
-		fmt.Scanln(&opt)
+		fmt.Scan(&opt)
 
 		switch opt {
 		case 1:
@@ -39,22 +39,22 @@ func main() {
 			menu += Option.Render("1. Listen\n2. Dial\n")
 			fmt.Println(MenuBorder.Render(menu))
 
-			fmt.Scanln(&opt)
+			fmt.Scan(&opt)
 			switch opt {
 			case 1:
 				fmt.Print(InputFieldLabels.Render(" Listening Connection..."))
-				fmt.Println("\n")
+				fmt.Print("\n\n")
 
 				var port string
 				var domain string
 				var conType string
 
 				fmt.Print(InputFieldLabels.Render(" Enter Domain [eg: 'localhost']: "))
-				fmt.Scanln(&domain)
+				fmt.Scan(&domain)
 				fmt.Print(InputFieldLabels.Render(" Enter Port [eg: '3000']: "))
-				fmt.Scanln(&port)
+				fmt.Scan(&port)
 				fmt.Print(InputFieldLabels.Render(" Enter Connection Type [eg: 'tcp']: "))
-				fmt.Scanln(&conType)
+				fmt.Scan(&conType)
 				wg.Add(1)
 				server := myserver.InitListener(domain, ":"+port, conType, &wg)
 				fmt.Print("\n")
@@ -70,11 +70,11 @@ func main() {
 				var conType string
 	
 				fmt.Print(InputFieldLabels.Render(" Enter Domain [eg: 'localhost']: "))
-				fmt.Scanln(&domain)
+				fmt.Scan(&domain)
 				fmt.Print(InputFieldLabels.Render(" Enter Port [eg: '3000']: "))
-				fmt.Scanln(&port)
+				fmt.Scan(&port)
 				fmt.Print(InputFieldLabels.Render(" Enter Connection Type [eg: 'tcp']: "))
-				fmt.Scanln(&conType)
+				fmt.Scan(&conType)
 				
 				wg.Add(1)
 				server := myserver.InitSender(domain, ":"+port, conType, &wg)
