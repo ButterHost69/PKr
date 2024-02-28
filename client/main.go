@@ -79,7 +79,13 @@ func main() {
 				wg.Add(1)
 				server := myserver.InitSender(domain, ":"+port, conType, &wg)
 				fmt.Print("\n")
-				server.DialGRPCInitConnection()
+				conslug, err := server.DialGRPCInitConnection()
+				if err != nil {
+					fmt.Println("Error Occured in Dialing....")
+				} else {
+					fmt.Println("\n")
+					myserver.SetWorkSpaceFolders(conslug)
+				}
 			}
 		}
 	}

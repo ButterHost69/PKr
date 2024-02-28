@@ -11,7 +11,8 @@ import (
 	"log"
 	"net"
 	"os"
-	
+	"strconv"
+
 	"time"
 
 	"google.golang.org/grpc"
@@ -45,17 +46,20 @@ const (
 // Set Workspace Folders
 
 func SetWorkSpaceFolders(connectionSlug string) {
-	var opt int
+	var optttt int
 	fmt.Println("1. Use Existing Workspace")
 	fmt.Println("2. Create New Workspace  ")
-	fmt.Scanln(&opt)
+	_, err := fmt.Scan(&optttt) // Remember: if input doesnt seem to work than try scan ->
+	if err != nil {
+		fmt.Println("error occured at input: ", err)
+	}
 	fmt.Println("\n")
 
-	switch opt {
+	switch optttt {
 	case 1:
 		var workspaceName string
 		fmt.Println(" Enter Existing Workspace Name: ")
-		fmt.Scanln(&workspaceName)
+		fmt.Scan(&workspaceName)
 
 		models.AddNewConnectionToTheWorkspace(workspaceName, connectionSlug)
 	case 2:
@@ -63,10 +67,10 @@ func SetWorkSpaceFolders(connectionSlug string) {
 		var workspacePath string
 
 		fmt.Print(" Enter NEW Workspace Name: ")
-		fmt.Scanln(&workspaceName)
+		fmt.Scan(&workspaceName)
 
 		fmt.Print(" Enter Workspace Path: ")
-		fmt.Scanln(&workspacePath)
+		fmt.Scan(&workspacePath)
 
 		if err := models.CreateNewWorkspace(workspaceName, workspacePath, connectionSlug); err != nil {
 			fmt.Println("error occured in Creating New Workspace")
@@ -164,9 +168,12 @@ func sendCertificateRequest(ctx context.Context, c pb.InitConnectionClient) stri
 	cmdConnectionPort := response.CommandConnectionPort
 	fmt.Printf("Command Connection Port: %d\n", cmdConnectionPort)
 
-	models.AddConnectionInUserConfig(CONNECTION_SLUG, password, DIAL_CONNECTION_IP)
-
-	return string(cmdConnectionPort)
+	if err := models.AddConnectionInUserConfig(CONNECTION_SLUG, password, DIAL_CONNECTION_IP); err != nil {
+		fmt.Println("error occured: ", err)
+		return ""
+	}
+	conport := strconv.Itoa(int(cmdConnectionPort))
+	return conport
 }
 
 func loadPrivateKey() string {
@@ -286,14 +293,13 @@ func (l *Listener) StartGRPCInitConnection() string {
 	}()
 	var conslug string
 	// go func() {
-		<-shutDownchan
-		g.GracefulStop()
-		log.Println(" Closing Listener ...")
-		conslug = CONNECTION_SLUG
-		return conslug
+	<-shutDownchan
+	g.GracefulStop()
+	log.Println(" Closing Listener ...")
+	conslug = CONNECTION_SLUG
+	return conslug
 	// }()
-	
-	
+
 	// c := make(chan os.Signal, 1)
 	// signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	// <-c
@@ -350,7 +356,7 @@ func (s *Sender) closeGRPCInitConnectionSender() {
 	s.GRPCConnection.Close()
 }
 
-func (s *Sender) DialGRPCInitConnection() {
+func (s *Sender) DialGRPCInitConnection() (string, error) {
 	var err error
 
 	DIAL_CONNECTION_IP = s.TARGET_DOMAIN + s.TARGET_PORT
@@ -358,7 +364,7 @@ func (s *Sender) DialGRPCInitConnection() {
 	if err != nil {
 		fmt.Printf("error in Dialing Connection to: %s:%s\nPlease Check IF The IP and PORT is Entered Correctly or not...\n", s.TARGET_DOMAIN, s.TARGET_PORT)
 		fmt.Println(err.Error())
-		return
+		return "", err
 	}
 	defer s.closeGRPCInitConnectionSender()
 
@@ -375,8 +381,12 @@ func (s *Sender) DialGRPCInitConnection() {
 		}
 	}
 	cport := sendCertificateRequest(ctx, c)
-	if cport != "" {
-		SetWorkSpaceFolders(CONNECTION_SLUG)
+	fmt.Println("Hello: ", cport)
+	if cport == "" {
+		fmt.Println("error occured in idk...")
+		s.closeGRPCInitConnectionSender()
+		return "", err
 	}
 
+	return CONNECTION_SLUG, nil
 }
