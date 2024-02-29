@@ -34,7 +34,7 @@ func InitListener(d string, p string, ct string, wg *sync.WaitGroup) Listener {
 		wg:      wg,
 	}
 }
-
+	
 func InitSender(d string, p string, ct string, wg *sync.WaitGroup) Sender {
 	return Sender{
 		TARGET_DOMAIN:  d,

@@ -14,6 +14,11 @@ type Connections struct {
 	CurrentIP      string `json:"current_ip"`
 }
 
+type ConnectionInfo struct {
+	ConnectionSlug string `json:"connection_slug"`
+	CurrentIP      string `json:"current_ip"`
+}
+
 type WorkspaceFolder struct {
 	WorkspaceName   string   `json:"workspace_name"`
 	WorkspaceLoc    string   `json:"workspace_loc"`
@@ -112,7 +117,7 @@ func readFromUserConfigFile() (UsersConfig, error) {
 		return UsersConfig{}, err
 	}
 
-	fmt.Println(userConfig)
+	// fmt.Println(userConfig)
 	return userConfig, nil
 }
 
@@ -153,7 +158,7 @@ func AddConnectionInUserConfig(connection_slug string, password string, connecti
 		User:           userConfig.User,
 		AllConnections: userConfig.AllConnections,
 		Sendworkspaces: userConfig.Sendworkspaces,
-		GetWorkspaces: userConfig.GetWorkspaces,
+		GetWorkspaces:  userConfig.GetWorkspaces,
 	}
 
 	if err := writeToUserConfigFile(newUserConfig); err != nil {
@@ -219,9 +224,9 @@ func CreateNewWorkspace(wName string, wPath string, connectionSlug string) error
 
 	userConfig.Sendworkspaces = append(userConfig.Sendworkspaces, wfolder)
 
-	fmt.Println(userConfig.Sendworkspaces)
-	jj, _ := json.MarshalIndent(userConfig, "", "	")
-	fmt.Println(string(jj))
+	// fmt.Println(userConfig.Sendworkspaces)
+	// jj, _ := json.MarshalIndent(userConfig, "", "	")
+	// fmt.Println(string(jj))
 
 	if err := writeToUserConfigFile(userConfig); err != nil {
 		fmt.Println("error: could not write to userconfig file")
@@ -230,3 +235,17 @@ func CreateNewWorkspace(wName string, wPath string, connectionSlug string) error
 
 	return nil
 }
+
+func GetAllConnections() []Connections {
+	userConfigFile, err := readFromUserConfigFile()
+	if err != nil {
+		fmt.Println("error in reading from the userConfig File")
+	}
+
+	
+	return userConfigFile.AllConnections
+}
+
+// func GetAllSendWorkspaceList() []string {
+
+// }
