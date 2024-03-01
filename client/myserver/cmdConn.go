@@ -6,6 +6,7 @@ import (
 	"ButterHost69/PKr-client/myserver/pb"
 	"context"
 	"fmt"
+	"net"
 	"time"
 
 	"google.golang.org/grpc"
@@ -21,25 +22,69 @@ type CmdServer struct{
 
 // -------------------------------------------------------
 // ---------------     Command Listener    ------------
-func (l *Listener) ListenCommandConnection() {
-
+func (l *Listener) closeGRPCCmdConnectionListener(){
+	fmt.Println("~ Closing GRPC Cmd Connection ...")
+	// l.wg.Done()
+	l.listn.Close()
 }
 
-// func (c *CmdServer) ExecuteCommand(ctx context.Context, in *pb.CommandRequest) (*pb.CommandResponse, error){
+func (l *Listener) StartGRPCCmdConnection() {
+	var err error
+	l.listn, err = net.Listen(l.CONTYPE, l.DOMAIN + l.PORT)
 
-// }
+	if err != nil {
+		fmt.Printf("error occured in listening to %s:%s\n", l.DOMAIN, l.PORT)
+		fmt.Println(err)
+		defer l.closeGRPCCmdConnectionListener()
+		return 
+	}
+
+	fmt.Println("Starting CMD Connection Server...")
+	g := grpc.NewServer()
+	pb.RegisterCmdConnectionServer(g, &CmdServer{})
+
+	go func() {
+		if err := g.Serve(l.listn); err != nil {
+			fmt.Println("error could not start grpc Sever")
+		}
+	}()
+}
+
+func (c *CmdServer) ExecuteCommand(ctx context.Context, in *pb.CommandRequest) (*pb.CommandResponse, error){
+	pass, err := encrypt.DecryptData(in.ConnPassword)
+	if err != nil {
+		fmt.Println("error occured in decrypting password")
+		fmt.Println(err)
+		return &pb.CommandResponse{
+			Ack: false,
+			RsPort: err.Error(),
+		}, err
+	}
+	ifConnExits := models.ValidateConnection(in.ConnSlug,pass)
+	if !ifConnExits {
+		return &pb.CommandResponse{
+			Ack: ifConnExits,
+			RsPort: "0",
+		}, nil
+	}
+	
+	return &pb.CommandResponse{
+		Ack: true,
+		RsPort: "0",
+	}, nil
+}
 
 // -------------------------------------------------------
 // ---------------       Command Request      ------------
 func (s *Sender) closeGRPCCmdConnectionSender() {
 	fmt.Println("~ Closing GRPC Command Connection Sender ...")
-	s.wg.Done()
+	
 	s.GRPCConnection.Close()
 }
 
 func (s *Sender) DialCommandConnection(conn models.Connections) {
 	var err error
-	CMD_DIAL_CONNECTION_IP = s.TARGET_DOMAIN
+	CMD_DIAL_CONNECTION_IP = s.TARGET_DOMAIN + ":" + s.TARGET_PORT
 	s.GRPCConnection, err = grpc.Dial(CMD_DIAL_CONNECTION_IP, grpc.WithInsecure())
 	if err != nil {
 		fmt.Printf("error occured in dialing grpc for cmd conncection")
@@ -63,7 +108,7 @@ func (s *Sender) DialCommandConnection(conn models.Connections) {
 }
 
 func sendExecuteCommandRequest(ctx context.Context, c pb.CmdConnectionClient, conn models.Connections) bool {
-	publicKey := "tmp/connections/" + CONNECTION_SLUG + "/publickey.pem"
+	publicKey := "tmp/connections/" + conn.ConnectionSlug + "/publickey.pem"
 	pemBlock := encrypt.GetPublicKey(publicKey)
 	encryptPass, err := encrypt.EncryptData(conn.Password, pemBlock)
 	if err != nil {
@@ -84,6 +129,6 @@ func sendExecuteCommandRequest(ctx context.Context, c pb.CmdConnectionClient, co
 		fmt.Println(err.Error())
 		return false
 	}
-
+	fmt.Println(response.RsPort)
 	return response.Ack
 }

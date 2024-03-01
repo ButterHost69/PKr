@@ -15,8 +15,12 @@ import (
 
 const (
 	INIT_MY_PORT   = ":3000"
-	INIT_MY_DOMAIN = "localhost"
+	INIT_MY_DOMAIN = "0.0.0.0"
 	INIT_CON_TYPE  = "tcp"
+
+	CMD_LISTN_PORT   = ":8069"
+	CMD_LISTN_DOMAIN = "0.0.0.0"
+	CMD_LISTN_TYPE  = "tcp"
 )
 
 func main() {
@@ -25,6 +29,12 @@ func main() {
 	utils.ClearScreen()
 	fmt.Println("`` Client Started ``")
 	models.CreateUserIfNotExists()
+
+	// Add Wait Group and then go func this son of a bitch
+	// Creare an InitWGListener() ~
+	// wg.Add(1)
+	cmdListn := myserver.InitListener(CMD_LISTN_DOMAIN, CMD_LISTN_PORT, CMD_LISTN_TYPE)
+	go cmdListn.StartGRPCCmdConnection()
 
 	for {
 		var opt int
@@ -59,8 +69,8 @@ func main() {
 				fmt.Scan(&port)
 				fmt.Print(InputFieldLabels.Render(" Enter Connection Type [eg: 'tcp']: "))
 				fmt.Scan(&conType)
-				wg.Add(1)
-				server := myserver.InitListener(domain, ":"+port, conType, &wg)
+				// wg.Add(1)
+				server := myserver.InitListener(domain, ":"+port, conType)
 				fmt.Print("\n")
 				conslug := server.StartGRPCInitConnection()
 				fmt.Print("\n\n")
@@ -107,7 +117,7 @@ func main() {
 					list_of_connections := models.GetAllConnections()
 					fmt.Print("\nList of all Connections :\n\n")
 					for _, con := range list_of_connections{
-						fmt.Println(con.CurrentIP + "  |  " + con.ConnectionSlug)
+						fmt.Println(con.CurrentIP + ":" + con.CurrentPort  + "  |  " + con.ConnectionSlug)
 					}
 					fmt.Print("\nEnter c To Continue: ")
 					var neko string
@@ -120,9 +130,9 @@ func main() {
 					fmt.Print("\nList of all Connections :\n\n")
 					for _, con := range list_of_connections{
 						count += 1
-						fmt.Println(strconv.Itoa(count) + ". " + con.CurrentIP + "  |  " + con.ConnectionSlug)
+						fmt.Println(strconv.Itoa(count) + ". " + con.CurrentIP + ":" + con.CurrentPort + "  |  " + con.ConnectionSlug)
 					}
-					fmt.Print("\nChoose a Connection 1-...")
+					fmt.Print("\nChoose a Connection 1-...: ")
 					var optConn int
 					fmt.Scan(&optConn)
 					curCon := list_of_connections[optConn - 1]
@@ -136,9 +146,12 @@ func main() {
 					switch opt {
 					case 1:
 						domain := curCon.CurrentIP // domain -> domain:port
-						server := myserver.InitSender(domain, "", "tcp", &wg) //Domain already contains the port 
+						// fmt.Println(curCon.CurrentPort)
+						server := myserver.InitSender(domain, curCon.CurrentPort, "tcp", &wg) //Domain already contains the port 
 						server.DialCommandConnection(curCon)
-						fmt.Scan(&opt)
+						fmt.Print("\nEnter c To Continue: ")
+						var neko string
+						fmt.Scan(&neko)
 					}
 				case 3:
 					utils.ClearScreen()

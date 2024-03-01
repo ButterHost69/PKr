@@ -6,17 +6,22 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
+
+	// "github.com/go-delve/delve/cmd/dlv/cmds"
 )
 
 type Connections struct {
 	ConnectionSlug string `json:"connection_slug"`
 	Password       string `json:"password"`
 	CurrentIP      string `json:"current_ip"`
+	CurrentPort      string `json:"current_port"`
 }
 
 type ConnectionInfo struct {
 	ConnectionSlug string `json:"connection_slug"`
 	CurrentIP      string `json:"current_ip"`
+	CurrentPort      string `json:"current_port"`
 }
 
 type WorkspaceFolder struct {
@@ -141,7 +146,7 @@ func writeToUserConfigFile(newUserConfig UsersConfig) error {
 	return nil
 }
 
-func AddConnectionInUserConfig(connection_slug string, password string, connectionIP string) error {
+func AddConnectionInUserConfig(connection_slug string, password string, connectionIP string, cmdPort int) error {
 	userConfig, err := readFromUserConfigFile()
 	if err != nil {
 		return err
@@ -151,6 +156,7 @@ func AddConnectionInUserConfig(connection_slug string, password string, connecti
 		ConnectionSlug: connection_slug,
 		Password:       password,
 		CurrentIP:      connectionIP,
+		CurrentPort:	strconv.Itoa(cmdPort),
 	}
 
 	userConfig.AllConnections = append(userConfig.AllConnections, connection)
@@ -249,3 +255,20 @@ func GetAllConnections() []Connections {
 // func GetAllSendWorkspaceList() []string {
 
 // }
+
+func ValidateConnection(connSlug string, connPassword string) bool {
+	userConfigFile, err := readFromUserConfigFile()
+	if err != nil {
+		fmt.Println("error in reading from the userConfig File")
+		return false
+	}
+
+
+	for _, conn := range userConfigFile.AllConnections {
+		if conn.ConnectionSlug == connPassword && conn.Password == connPassword{
+			return true
+		}
+	}
+
+	return false
+}

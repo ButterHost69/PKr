@@ -77,8 +77,8 @@ func StorePublicKeyInFile(filepath string, pbkey *rsa.PublicKey) error {
 	return os.WriteFile(filepath, public_pem_key, 0666)
 }
 
-func DecryptData(privateKeyPemBlock string, cipherText string) (string, error) {
-	block, _ := pem.Decode([]byte(privateKeyPemBlock))
+func DecryptData(cipherText string) (string, error) {
+	block, _ := pem.Decode([]byte(loadPrivateKey()))
 	if block == nil {
 		fmt.Println("error in parsing the pem Block...")
 		fmt.Println("Pls check if the provided Private Key is correct")

@@ -12,6 +12,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -120,8 +121,7 @@ func (is *InitServer) ExchangeCertificates(ctx context.Context, in *pb.Certifica
 		return nil, errors.New("init ip and incomming ip's do not match")
 	}
 
-	myPrivateKey := loadPrivateKey()
-	password, err := encrypt.DecryptData(myPrivateKey, in.ConnectionPassword)
+	password, err := encrypt.DecryptData(in.ConnectionPassword)
 	if err != nil {
 		fmt.Println(err.Error())
 		return nil, nil
@@ -137,7 +137,11 @@ func (is *InitServer) ExchangeCertificates(ctx context.Context, in *pb.Certifica
 	fmt.Println("Keys Have Been Stored ...")
 
 	is.shutDownListenerchan <- struct{}{}
-	models.AddConnectionInUserConfig(CONNECTION_SLUG, password, incommingIP)
+
+	IP := strings.Split(incommingIP, ":")
+
+
+	models.AddConnectionInUserConfig(CONNECTION_SLUG, password, IP[0], 8069) // cmdPort
 
 	return &pb.CertificateResponse{
 		CommandConnectionPort: 8069,
@@ -165,13 +169,15 @@ func sendCertificateRequest(ctx context.Context, c pb.InitConnectionClient) stri
 	}
 
 	cmdConnectionPort := response.CommandConnectionPort
-	fmt.Printf("Command Connection Port: %d\n", cmdConnectionPort)
+	conport := strconv.Itoa(int(cmdConnectionPort))
 
-	if err := models.AddConnectionInUserConfig(CONNECTION_SLUG, password, DIAL_CONNECTION_IP); err != nil {
+	fmt.Printf("Command Connection Port: %d\n", cmdConnectionPort)
+	IP := strings.Split(DIAL_CONNECTION_IP, ":")
+	fmt.Println(cmdConnectionPort)
+	if err := models.AddConnectionInUserConfig(CONNECTION_SLUG, password, IP[0], int(cmdConnectionPort)); err != nil {
 		fmt.Println("error occured: ", err)
 		return ""
 	}
-	conport := strconv.Itoa(int(cmdConnectionPort))
 	return conport
 }
 
@@ -262,7 +268,7 @@ func (is *InitServer) VerifyOTP(ctx context.Context, in *pb.OTP) (*pb.OTPRespons
 
 func (l *Listener) closeGRPCInitConnectionListener() {
 	fmt.Println("~ Closing GRPC Init Connection ...")
-	l.wg.Done()
+	// l.wg.Done()
 	l.listn.Close()
 }
 

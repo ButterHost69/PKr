@@ -26,7 +26,16 @@ type Sender struct {
 	wg 				*sync.WaitGroup
 }
 
-func InitListener(d string, p string, ct string, wg *sync.WaitGroup) Listener {
+func InitListener(d string, p string, ct string) Listener {
+	return Listener{
+		DOMAIN:  d,
+		PORT:    p,
+		CONTYPE: ct,
+		// wg:      wg,
+	}
+}
+	
+func InitWGListener(d string, p string, ct string, wg *sync.WaitGroup) Listener {
 	return Listener{
 		DOMAIN:  d,
 		PORT:    p,
@@ -34,7 +43,7 @@ func InitListener(d string, p string, ct string, wg *sync.WaitGroup) Listener {
 		wg:      wg,
 	}
 }
-	
+
 func InitSender(d string, p string, ct string, wg *sync.WaitGroup) Sender {
 	return Sender{
 		TARGET_DOMAIN:  d,
