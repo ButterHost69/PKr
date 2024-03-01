@@ -35,7 +35,7 @@ var (
 )
 
 const (
-	COMMAND_CONNECTION_PORT = 8069
+	COMMAND_CONNECTION_PORT = 3069
 	PUBLIC_KEYS_PATH        = "tmp/mykeys/publickey.pem"
 	PRIVATE_KEYS_PATH       = "tmp/mykeys/privatekey.pem"
 )
@@ -141,10 +141,10 @@ func (is *InitServer) ExchangeCertificates(ctx context.Context, in *pb.Certifica
 	IP := strings.Split(incommingIP, ":")
 
 
-	models.AddConnectionInUserConfig(CONNECTION_SLUG, password, IP[0], 8069) // cmdPort
+	models.AddConnectionInUserConfig(CONNECTION_SLUG, password, IP[0], 3069) // cmdPort
 
 	return &pb.CertificateResponse{
-		CommandConnectionPort: 8069,
+		CommandConnectionPort: 3069,
 	}, nil
 }
 

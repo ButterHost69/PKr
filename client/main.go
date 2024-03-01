@@ -18,7 +18,7 @@ const (
 	INIT_MY_DOMAIN = "0.0.0.0"
 	INIT_CON_TYPE  = "tcp"
 
-	CMD_LISTN_PORT   = ":8069"
+	CMD_LISTN_PORT   = ":3069"
 	CMD_LISTN_DOMAIN = "0.0.0.0"
 	CMD_LISTN_TYPE  = "tcp"
 )
